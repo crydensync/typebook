@@ -21,9 +21,9 @@ type SinginRequest struct {
 }
 
 type LogoutRequest struct {
-	Email        string  `json:"email"`
-	Password     string  `json:"password"`
-	RefreshToken string `json:"refresh_token"` 
+	Email        string `json:"email"`
+	Password     string `json:"password"`
+	RefreshToken string `json:"refresh_token"`
 }
 
 type ChangePasswordRequest struct {
@@ -33,109 +33,109 @@ type ChangePasswordRequest struct {
 
 // Signup handler
 func Signup(engine *cryden.Engine) fiber.Handler {
-    return func(c *fiber.Ctx) error {
-        var req SignupRequst
-        if err := c.BodyParser(&req); err != nil {
-            return c.Status(400).JSON(fiber.Map{"error": "Invalid request"})
-        }
+	return func(c *fiber.Ctx) error {
+		var req SignupRequst
+		if err := c.BodyParser(&req); err != nil {
+			return c.Status(400).JSON(fiber.Map{"error": "Invalid request"})
+		}
 
-        user, err := cryden.SignUp(ctx, engine, req.Email, req.Password)
-        if err != nil {
-            return c.Status(400).JSON(fiber.Map{"error": err.Error()})
-        }
+		user, err := cryden.SignUp(ctx, engine, req.Email, req.Password)
+		if err != nil {
+			return c.Status(400).JSON(fiber.Map{"error": err.Error()})
+		}
 
-        return c.Status(201).JSON(fiber.Map{
-            "message": "User created successfully",
-            "user_id": user.ID,
-            "email":   user.Email,
-        })
-    }
+		return c.Status(201).JSON(fiber.Map{
+			"message": "User created successfully",
+			"user_id": user.ID,
+			"email":   user.Email,
+		})
+	}
 }
 
 // Login handler
 func Login(engine *cryden.Engine) fiber.Handler {
-    return func(c *fiber.Ctx) error {
-        var req LogoutRequest
-        if err := c.BodyParser(&req); err != nil {
-            return c.Status(400).JSON(fiber.Map{"error": "Invalid request"})
-        }
+	return func(c *fiber.Ctx) error {
+		var req LogoutRequest
+		if err := c.BodyParser(&req); err != nil {
+			return c.Status(400).JSON(fiber.Map{"error": "Invalid request"})
+		}
 
-        tokens, rate, err := cryden.Login(ctx, engine, req.Email, req.Password)
-        if err != nil {
-            return c.Status(401).JSON(fiber.Map{"error": err.Error()})
-        }
+		tokens, rate, err := cryden.Login(ctx, engine, req.Email, req.Password)
+		if err != nil {
+			return c.Status(401).JSON(fiber.Map{"error": err.Error()})
+		}
 
-        // Set rate limit headers
-        c.Set("X-RateLimit-Limit", strconv.Itoa(rate.Limit))
-        c.Set("X-RateLimit-Remaining", strconv.Itoa(rate.Remaining))
-        c.Set("X-RateLimit-Reset", strconv.FormatInt(int64(rate.Reset.Seconds()), 10))
+		// Set rate limit headers
+		c.Set("X-RateLimit-Limit", strconv.Itoa(rate.Limit))
+		c.Set("X-RateLimit-Remaining", strconv.Itoa(rate.Remaining))
+		c.Set("X-RateLimit-Reset", strconv.FormatInt(int64(rate.Reset.Seconds()), 10))
 
-        return c.JSON(fiber.Map{
-            "access_token":  tokens.AccessToken,
-            "refresh_token": tokens.RefreshToken,
-            "token_type":    "Bearer",
-            "expires_in":    tokens.ExpiresIn,
-        })
-    }
+		return c.JSON(fiber.Map{
+			"access_token":  tokens.AccessToken,
+			"refresh_token": tokens.RefreshToken,
+			"token_type":    "Bearer",
+			"expires_in":    tokens.ExpiresIn,
+		})
+	}
 }
 
 // Logout handler
 func Logout(engine *cryden.Engine) fiber.Handler {
-    return func(c *fiber.Ctx) error {
-        var req LogoutRequest
-        if err := c.BodyParser(&req); err != nil {
-            return c.Status(400).JSON(fiber.Map{"error": "Invalid request"})
-        }
+	return func(c *fiber.Ctx) error {
+		var req LogoutRequest
+		if err := c.BodyParser(&req); err != nil {
+			return c.Status(400).JSON(fiber.Map{"error": "Invalid request"})
+		}
 
-        if err := cryden.Logout(ctx, engine, req.RefreshToken); err != nil {
-            return c.Status(400).JSON(fiber.Map{"error": err.Error()})
-        }
+		if err := cryden.Logout(ctx, engine, req.RefreshToken); err != nil {
+			return c.Status(400).JSON(fiber.Map{"error": err.Error()})
+		}
 
-        return c.JSON(fiber.Map{"message": "Logged out successfully"})
-    }
+		return c.JSON(fiber.Map{"message": "Logged out successfully"})
+	}
 }
 
 // Logout all devices
 func LogoutAll(engine *cryden.Engine) fiber.Handler {
-    return func(c *fiber.Ctx) error {
-        userID := c.Locals("user_id").(string)
-        
-        if err := cryden.LogoutAll(ctx, engine, userID); err != nil {
-            return c.Status(400).JSON(fiber.Map{"error": err.Error()})
-        }
+	return func(c *fiber.Ctx) error {
+		userID := c.Locals("user_id").(string)
 
-        return c.JSON(fiber.Map{"message": "Logged out from all devices"})
-    }
+		if err := cryden.LogoutAll(ctx, engine, userID); err != nil {
+			return c.Status(400).JSON(fiber.Map{"error": err.Error()})
+		}
+
+		return c.JSON(fiber.Map{"message": "Logged out from all devices"})
+	}
 }
 
 // Change password
 func ChangePassword(engine *cryden.Engine) fiber.Handler {
-    return func(c *fiber.Ctx) error {
-        userID := c.Locals("user_id").(string)
-        var req ChangePasswordRequest
+	return func(c *fiber.Ctx) error {
+		userID := c.Locals("user_id").(string)
+		var req ChangePasswordRequest
 
-        if err := c.BodyParser(&req); err != nil {
-            return c.Status(400).JSON(fiber.Map{"error": "Invalid request"})
-        }
+		if err := c.BodyParser(&req); err != nil {
+			return c.Status(400).JSON(fiber.Map{"error": "Invalid request"})
+		}
 
-        if err := cryden.ChangePassword(ctx, engine, userID, req.OldPassword, req.NewPassword); err != nil {
-            return c.Status(400).JSON(fiber.Map{"error": err.Error()})
-        }
+		if err := cryden.ChangePassword(ctx, engine, userID, req.OldPassword, req.NewPassword); err != nil {
+			return c.Status(400).JSON(fiber.Map{"error": err.Error()})
+		}
 
-        return c.JSON(fiber.Map{"message": "Password changed successfully"})
-    }
+		return c.JSON(fiber.Map{"message": "Password changed successfully"})
+	}
 }
 
 // List active sessions
 func ListSessions(engine *cryden.Engine) fiber.Handler {
-    return func(c *fiber.Ctx) error {
-        userID := c.Locals("user_id").(string)
-        
-        sessions, err := cryden.ListSessions(ctx, engine, userID)
-        if err != nil {
-            return c.Status(400).JSON(fiber.Map{"error": err.Error()})
-        }
+	return func(c *fiber.Ctx) error {
+		userID := c.Locals("user_id").(string)
 
-        return c.JSON(fiber.Map{"sessions": sessions})
-    }
+		sessions, err := cryden.ListSessions(ctx, engine, userID)
+		if err != nil {
+			return c.Status(400).JSON(fiber.Map{"error": err.Error()})
+		}
+
+		return c.JSON(fiber.Map{"sessions": sessions})
+	}
 }
