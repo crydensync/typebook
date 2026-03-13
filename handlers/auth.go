@@ -2,7 +2,6 @@ package handler
 
 import (
 	"context"
-	"os"
 	"strconv"
 
 	"github.com/crydensync/cryden"
@@ -22,10 +21,12 @@ type SinginRequest struct {
 }
 
 type LogoutRequest struct {
+	Email        string  `json:"email"`
+	Password     string  `json:"password"`
 	RefreshToken string `json:"refresh_token"` 
 }
 
-type ChangePassword struct {
+type ChangePasswordRequest struct {
 	OldPassword string `json:"old_password"`
 	NewPassword string `json:"new_password"`
 }
@@ -33,7 +34,7 @@ type ChangePassword struct {
 // Signup handler
 func Signup(engine *cryden.Engine) fiber.Handler {
     return func(c *fiber.Ctx) error {
-        var req SignupRequest
+        var req SignupRequst
         if err := c.BodyParser(&req); err != nil {
             return c.Status(400).JSON(fiber.Map{"error": "Invalid request"})
         }
@@ -54,7 +55,7 @@ func Signup(engine *cryden.Engine) fiber.Handler {
 // Login handler
 func Login(engine *cryden.Engine) fiber.Handler {
     return func(c *fiber.Ctx) error {
-        var req LoginRequest
+        var req LogoutRequest
         if err := c.BodyParser(&req); err != nil {
             return c.Status(400).JSON(fiber.Map{"error": "Invalid request"})
         }
