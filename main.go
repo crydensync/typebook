@@ -15,11 +15,12 @@ import (
 
 func main() {
     // Initialize Cryden with SQLite
-    engine, err := database.InitAuth()
-    if err != nil {
+   // engine, err := database.Init()
+	 if err := database.Init(); err != nil {
         log.Fatal("❌ Failed to initialize auth:", err)
     }
-    defer engine.Close()
+		engine := database.AuthEngine
+    //defer engine.Close()
     log.Println("✅ Auth engine initialized")
 
     // 2. Create Fiber app
@@ -33,7 +34,7 @@ func main() {
         Format: "[${time}] ${status} - ${latency} ${method} ${path}\n",
     }))
 
-    // Health check
+    // Health ciheck
     app.Get("/health", func(c *fiber.Ctx) error {
         return c.JSON(fiber.Map{
             "status":    "healthy",
@@ -44,18 +45,18 @@ func main() {
     })
 
     // Public auth routes
-    app.Post("/signup", handlers.Signup(engine))
-    app.Post("/login", handlers.Login(engine))
+    app.Post("/signup", handler.Signup(engine))
+    app.Post("/login", handler.Login(engine))
 
     // Protected routes
-    api := app.Group("/api", handlers.AuthMiddleware(engine))
+    api := app.Group("/api", handler.AuthMiddleware(engine))
     //api.Post("/notes", handlers.CreateNote())
     //api.Get("/notes", handlers.ListNotes())
     //api.Delete("/notes/:id", handlers.DeleteNote())
-    api.Post("/logout", handlers.Logout(engine))
-    api.Post("/logout-all", handlers.LogoutAll(engine))
-    api.Post("/change-password", handlers.ChangePassword(engine))
-    api.Get("/sessions", handlers.ListSessions(engine))
+    api.Post("/logout", handler.Logout(engine))
+    api.Post("/logout-all", handler.LogoutAll(engine))
+    api.Post("/change-password", handler.ChangePassword(engine))
+    api.Get("/sessions", handler.ListSessions(engine))
 
     // Get port from env
     port := os.Getenv("PORT")
