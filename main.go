@@ -11,6 +11,7 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/raymondproguy/typebook/database"
 	"github.com/raymondproguy/typebook/handlers"
+	"github.com/raymondproguy/typebook/models"
 )
 
 func main() {
@@ -50,22 +51,23 @@ func main() {
 
 	// Protected routes
 	api := app.Group("/api", handler.AuthMiddleware(engine))
-	api.Post("/notes", handler.CreateNote())
-	api.Get("/notes", handler.ListNotes())
-	api.Delete("/notes/:id", handler.DeleteNote())
 	api.Post("/logout", handler.Logout(engine))
 	api.Post("/logout-all", handler.LogoutAll(engine))
 	api.Post("/change-password", handler.ChangePassword(engine))
 	api.Get("/sessions", handler.ListSessions(engine))
 
+	noteStore := models.NewNoteStore(database.NotesDB)
+	api.Post("/notes", handler.CreateNote(noteStore))
+	api.Get("/notes", handler.ListNotes(noteStore))
+  api.Delete("/notes/:id", handler.DeleteNote(noteStore))
 
-        profileStore := models.NewProfileStore(database.NotesDB)
-        // Protected profiles routes:
-        api.Get("/profile", handlers.GetProfile(profileStore))
-        api.Put("/profile", handlers.UpdateProfile(profileStore))
 
-        // Public profile
-        app.Get("/u/:username", handlers.GetPublicProfile(profileStore))
+  profileStore := models.NewProfileStore(database.NotesDB)
+  // Protected profiles routes:
+  api.Get("/profile", handler.GetProfile(profileStore))
+  api.Put("/profile", handler.UpdateProfile(profileStore))
+   // Public profile
+  app.Get("/u/:username", handler.GetPublicProfile(profileStore))
 
 	// Get port from env
 	port := os.Getenv("PORT")
