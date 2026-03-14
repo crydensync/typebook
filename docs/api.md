@@ -246,3 +246,58 @@ Login endpoint is rate limited to 5 attempts per minute per IP. Rate limit info 
 · X-RateLimit-Limit: Maximum attempts
 · X-RateLimit-Remaining: Attempts remaining
 · X-RateLimit-Reset: Seconds until limit resets
+
+## Profile Endpoints
+
+### Get My Profile
+`GET /api/profile`
+
+Response:
+```json
+{
+  "user_id": "usr_123...",
+  "display_name": "Alice Wonder",
+  "username": "alice",
+  "bio": "Building cool stuff",
+  "avatar_url": "https://example.com/avatar.jpg",
+  "phone": "+2348012345678",
+  "location": "Lagos, Nigeria",
+  "website": "https://alice.dev",
+  "updated_at": "2026-03-11T12:00:00Z"
+}
+```
+
+Update Profile
+
+PUT /api/profile
+
+Request:
+
+```json
+{
+  "display_name": "Alice Wonder",
+  "username": "alice",
+  "bio": "Building cool stuff with Go",
+  "avatar_url": "https://example.com/avatar.jpg",
+  "phone": "+2348012345678",
+  "location": "Lagos, Nigeria",
+  "website": "https://alice.dev"
+}
+```
+
+View Public Profile
+
+GET /u/:username
+
+Response:
+
+```json
+{
+  "username": "alice",
+  "display_name": "Alice Wonder",
+  "bio": "Building cool stuff with Go",
+  "avatar_url": "https://example.com/avatar.jpg",
+  "location": "Lagos, Nigeria",
+  "website": "https://alice.dev"
+}
+```
