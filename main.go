@@ -58,6 +58,15 @@ func main() {
 	api.Post("/change-password", handler.ChangePassword(engine))
 	api.Get("/sessions", handler.ListSessions(engine))
 
+
+        profileStore := models.NewProfileStore(database.NotesDB)
+        // Protected profiles routes:
+        api.Get("/profile", handlers.GetProfile(profileStore))
+        api.Put("/profile", handlers.UpdateProfile(profileStore))
+
+        // Public profile
+        app.Get("/u/:username", handlers.GetPublicProfile(profileStore))
+
 	// Get port from env
 	port := os.Getenv("PORT")
 	if port == "" {
