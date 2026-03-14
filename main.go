@@ -50,9 +50,9 @@ func main() {
 
 	// Protected routes
 	api := app.Group("/api", handler.AuthMiddleware(engine))
-	//api.Post("/notes", handlers.CreateNote())
-	//api.Get("/notes", handlers.ListNotes())
-	//api.Delete("/notes/:id", handlers.DeleteNote())
+	api.Post("/notes", handler.CreateNote())
+	api.Get("/notes", handler.ListNotes())
+	api.Delete("/notes/:id", handler.DeleteNote())
 	api.Post("/logout", handler.Logout(engine))
 	api.Post("/logout-all", handler.LogoutAll(engine))
 	api.Post("/change-password", handler.ChangePassword(engine))
