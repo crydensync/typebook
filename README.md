@@ -117,6 +117,40 @@ Example: View Public Profile
 curl http://localhost:3000/u/alice
 ```
 
+### 🔍 Search Notes
+```bash
+# Search in titles and content
+GET /api/notes/search?q=golang
+GET /api/notes/search?tag=work
+GET /api/notes/search?favorite=true
+```
+
+⭐ Favorites
+
+```bash
+# Mark important notes
+POST /api/notes/:id/favorite  # Toggle favorite status
+GET /api/notes?favorite=true   # Show only favorites
+```
+
+🔗 Note Sharing
+
+```bash
+# Share notes publicly
+POST /api/notes/:id/share     # Generate share link
+POST /api/notes/:id/unshare   # Remove sharing
+GET /shared/:share_id          # Public view (no login)
+```
+
+🏷️ Tags & Categories
+
+```bash
+# Organize notes
+POST /api/notes -d '{"tags": "work,idea,personal"}'
+GET /api/notes?tag=work        # Filter by tag
+GET /api/tags                  # List all your tags
+```
+
 🏗️ Built With
 
 · CrydenSync - Auth engine
