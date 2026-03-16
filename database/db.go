@@ -19,13 +19,23 @@ func Init() error {
 		log.Println("No .env file found, using environment variables")
 	}
 
-	// 1. Create data directory if it doesn't exist
+logFile, err := os.OpenFile("data/typebook.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+    if err != nil {
+        return err
+    }
+    
+    fileLogger := security.NewFileAuditLogger("data/typebook.log")
+    AuthEngine.WithAuditLogger(fileLogger)
+    
+    log.Println("✅ File logger initialized at data/typebook.log")
+
+	// Create data directory if it doesn't exist
 	dataDir := "data"
 	if err := os.MkdirAll(dataDir, 0755); err != nil {
 		return err
 	}
 
-	// 2. Initialize Auth Database
+	// Initialize Auth Database
 	authPath := os.Getenv("AUTH_DB_PATH")
 	if authPath == "" {
 		authPath = filepath.Join(dataDir, "auth.db")
@@ -49,7 +59,7 @@ func Init() error {
 
 	log.Println("✅ Auth database initialized at", authPath)
 
-	// 3. Initialize Notes Database
+	// Initialize Notes Database
 	notesPath := os.Getenv("NOTES_DB_PATH")
 	if notesPath == "" {
 		notesPath = filepath.Join(dataDir, "notes.db")
