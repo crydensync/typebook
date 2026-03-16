@@ -10,7 +10,12 @@ type Note struct {
     UserID    string    `json:"user_id"`
     Title     string    `json:"title"`
     Content   string    `json:"content"`
+		Tags      string    `json:"tags"`
+		Favorite  bool      `json:"favorite"`
+		Shared    bool      `json:"shared"`
+    ShareID   string    `json:"share_id, omitempty"`
     CreatedAt time.Time `json:"created_at"`
+		UpdatedAt time.Time `json:"updated_at"`
 }
 
 // NoteStore handles note database operations
@@ -20,6 +25,10 @@ type NoteStore struct {
 
 func NewNoteStore(db *sql.DB) *NoteStore {
     return &NoteStore{db: db}
+}
+
+func (s *NoteStore) GetDB() *sql.DB {
+    return s.db
 }
 
 func (s *NoteStore) Create(userID, title, content string) (*Note, error) {
