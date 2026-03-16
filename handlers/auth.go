@@ -15,7 +15,7 @@ type SignupRequst struct {
 	Password string `json:"password"`
 }
 
-type SinginRequest struct {
+type SigninRequest struct {
 	Email    string `json:"email"`
 	Password string `json:"password"`
 }
@@ -54,30 +54,43 @@ func Signup(engine *cryden.Engine) fiber.Handler {
 
 // Login handler
 func Login(engine *cryden.Engine) fiber.Handler {
-	return func(c *fiber.Ctx) error {
-		var req LogoutRequest
-		if err := c.BodyParser(&req); err != nil {
-			return c.Status(400).JSON(fiber.Map{"error": "Invalid request"})
-		}
+    return func(c *fiber.Ctx) error {
+        var req LogoutRequest
+        if err := c.BodyParser(&req); err != nil {
+            return c.Status(400).JSON(fiber.Map{"error": "Invalid request"})
+        }
 
-		tokens, rate, err := cryden.Login(ctx, engine, req.Email, req.Password)
-		if err != nil {
-			return c.Status(401).JSON(fiber.Map{"error": err.Error()})
-		}
+        // Get client IP for rate limiting
+        ip := c.IP()
+        if ip == "" {
+            ip = "127.0.0.1"
+        }
+        
+        // Create context with IP
+        ctx := context.WithValue(context.Background(), "ip", ip)
 
-		// Set rate limit headers
-		c.Set("X-RateLimit-Limit", strconv.Itoa(rate.Limit))
-		c.Set("X-RateLimit-Remaining", strconv.Itoa(rate.Remaining))
-		c.Set("X-RateLimit-Reset", strconv.FormatInt(int64(rate.Reset.Seconds()), 10))
+        tokens, rate, err := cryden.Login(ctx, engine, req.Email, req.Password)
+        if err != nil {
+            return c.Status(401).JSON(fiber.Map{
+                "error": err.Error(),
+                "rate_remaining": rate.Remaining,
+            })
+        }
 
-		return c.JSON(fiber.Map{
-			"access_token":  tokens.AccessToken,
-			"refresh_token": tokens.RefreshToken,
-			"token_type":    "Bearer",
-			"expires_in":    tokens.ExpiresIn,
-		})
-	}
+        // Set rate limit headers
+        c.Set("X-RateLimit-Limit", strconv.Itoa(rate.Limit))
+        c.Set("X-RateLimit-Remaining", strconv.Itoa(rate.Remaining))
+        c.Set("X-RateLimit-Reset", strconv.FormatInt(int64(rate.Reset.Seconds()), 10))
+
+        return c.JSON(fiber.Map{
+            "access_token":  tokens.AccessToken,
+            "refresh_token": tokens.RefreshToken,
+            "token_type":    "Bearer",
+            "expires_in":    tokens.ExpiresIn,
+        })
+    }
 }
+
 
 // Logout handler
 func Logout(engine *cryden.Engine) fiber.Handler {
