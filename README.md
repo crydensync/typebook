@@ -1,5 +1,7 @@
 # Typebook 📝
 
+The Officail CrydenSync Demo App.
+
 A minimalist note-taking app demonstrating **CrydenSync** authentication in action.
 
 ## ✨ Features
@@ -21,7 +23,7 @@ A minimalist note-taking app demonstrating **CrydenSync** authentication in acti
 
 ```bash
 # 1. Clone
-git clone https://github.com/raymondproguy/typebook
+git clone https://github.com/crydensync/typebook
 cd typebook
 
 # 2. Copy environment file
@@ -186,7 +188,7 @@ PRs welcome! Feel free to add features or improvements.
 
 📄 License
 
-MIT © Raymond Nicholas
+MIT © CrydenSync
 
 ---
 
