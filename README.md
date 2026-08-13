@@ -1,195 +1,58 @@
-# Typebook 📝
+# typebook
 
-The Officail CrydenSync Demo App.
+A minimal Google Keep-style notes app — built to exercise every feature of [CrydenSync](https://github.com/crydensync/cryden) in a real, full-stack, production-shaped setting. This is the reference app proving the auth engine works end-to-end, not just in unit tests.
 
-A minimalist note-taking app demonstrating **CrydenSync** authentication in action.
+## What this actually exercises
 
-## ✨ Features
+Every CrydenSync feature has a real reason to run here, not a contrived one:
 
-### Authentication (Powered by CrydenSync)
-- ✅ User signup/login with JWT
-- ✅ Rate limiting with headers
-- ✅ SQLite persistence for users & sessions
-- ✅ Session management (list active devices)
-- ✅ Logout (single device) & Logout all devices
-- ✅ Change password
+- SignUp / Login / VerifyToken — basic auth flow
+- RefreshToken — the API client silently refreshes on a 401 and retries
+- ListSessions / RevokeSession — Settings → Active sessions
+- Logout / LogoutAll
+- ChangePassword — confirm it actually revokes all sessions (you'll get logged out)
+- RequestEmailChange / ConfirmEmailChange — full round trip via the `/confirm-email?token=...` route
+- DeleteAccount — with cascade cleanup of sessions and notes
 
-### Notes
-- ✅ Create notes (protected)
-- ✅ List your notes
-- ✅ Delete notes
+## Structure
 
-## 🚀 Quick Start
-
-```bash
-# 1. Clone
-git clone https://github.com/crydensync/typebook
-cd typebook
-
-# 2. Copy environment file
-cp .env.example .env
-# Edit .env with your JWT secret
-
-# 3. Run
-go mod tidy
-go run main.go
-
-# 4. Open http://localhost:3000
+```
+typebook/
+├── backend/     Go, net/http, wraps CrydenSync + a small notes domain
+└── frontend/    React + Vite, light/dark theme, minimal Keep-style UI
 ```
 
-📡 API Endpoints
+## Running locally
 
-Method Endpoint Description Auth
-POST /signup Create account ❌
-POST /login Login + get tokens ❌
-GET /health Health check ❌
-POST /api/notes Create note ✅
-GET /api/notes List notes ✅
-DELETE /api/notes/:id Delete note ✅
-POST /api/logout Logout device ✅
-POST /api/logout-all Logout all devices ✅
-POST /api/change-password Change password ✅
-GET /api/sessions List sessions ✅
-
-📝 Example Requests
-
-Sign Up
-
+**1. Database** — run CrydenSync's migration, then this repo's own notes migration, against your Postgres instance:
 ```bash
-curl -X POST http://localhost:3000/signup \
-  -H "Content-Type: application/json" \
-  -d '{"email":"alice@example.com","password":"SecurePass123"}'
+psql "$DATABASE_URL" -f path/to/cryden/store/postgres/migrations/0001_initial_schema.up.sql
+psql "$DATABASE_URL" -f backend/migrations/0001_notes.up.sql
 ```
 
-Login
-
+**2. Backend:**
 ```bash
-curl -X POST http://localhost:3000/login \
-  -H "Content-Type: application/json" \
-  -d '{"email":"alice@example.com","password":"SecurePass123"}'
+cd backend
+cp .env.example .env   # fill in DATABASE_URL and JWT_SECRET
+go run .
 ```
 
-Create Note (with token)
-
+**3. Frontend:**
 ```bash
-curl -X POST http://localhost:3000/api/notes \
-  -H "Authorization: Bearer YOUR_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{"title":"Meeting","content":"Discuss Typebook"}'
+cd frontend
+cp .env.example .env   # defaults to http://localhost:8080, adjust if needed
+npm install
+npm run dev
 ```
 
-## 👤 User Profiles
+Open the printed Vite URL (typically `http://localhost:5173`).
 
-Typebook now supports user profiles! Each user can have:
+## Notes on this being a demo/reference app, not a template for your own production auth
 
-- Display name
-- Unique username
-- Bio
-- Avatar URL
-- Phone number
-- Location
-- Website
+- The `consoleEmailSender` in `backend/email.go` just logs the verification link — it's a dev stand-in for `notify.EmailSender`. Replace it with a real provider (SES, SendGrid, Postmark) before using this pattern in a real product.
+- Tokens are stored in `localStorage` on the frontend for simplicity. A production app handling more sensitive data might prefer httpOnly cookies instead — this is a reasonable, common tradeoff for a notes app, not a universal recommendation.
+- `Password validation` (`ValidateEmail`/`ValidatePassword`) is expected to be wired into the CrydenSync engine's `SignUp` call — confirm that's in place in your CrydenSync version before relying on this app's signup form to enforce a real password policy.
 
-### Profile Endpoints
+## License
 
-| Method | Endpoint | Description | Auth |
-|--------|----------|-------------|------|
-| GET | `/api/profile` | Get your profile | ✅ |
-| PUT | `/api/profile` | Update profile | ✅ |
-| GET | `/u/:username` | View public profile | ❌ |
-
-### Example: Update Profile
-
-```bash
-curl -X PUT http://localhost:3000/api/profile \
-  -H "Authorization: Bearer YOUR_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "display_name": "Alice Wonder",
-    "username": "alice",
-    "bio": "Building cool stuff with Go",
-    "location": "Lagos, Nigeria",
-    "website": "https://alice.dev"
-  }'
-```
-
-Example: View Public Profile
-
-```bash
-curl http://localhost:3000/u/alice
-```
-
-### 🔍 Search Notes
-```bash
-# Search in titles and content
-GET /api/notes/search?q=golang
-GET /api/notes/search?tag=work
-GET /api/notes/search?favorite=true
-```
-
-⭐ Favorites
-
-```bash
-# Mark important notes
-POST /api/notes/:id/favorite  # Toggle favorite status
-GET /api/notes?favorite=true   # Show only favorites
-```
-
-🔗 Note Sharing
-
-```bash
-# Share notes publicly
-POST /api/notes/:id/share     # Generate share link
-POST /api/notes/:id/unshare   # Remove sharing
-GET /shared/:share_id          # Public view (no login)
-```
-
-🏷️ Tags & Categories
-
-```bash
-# Organize notes
-POST /api/notes -d '{"tags": "work,idea,personal"}'
-GET /api/notes?tag=work        # Filter by tag
-GET /api/tags                  # List all your tags
-```
-
-🏗️ Built With
-
-· CrydenSync - Auth engine
-· Fiber - Web framework
-· SQLite - Database
-· Go - Language
-
-📊 Project Stats
-
- 
-⭐ Stars https://img.shields.io/github/stars/raymondproguy/typebook
-📥 Downloads https://img.shields.io/github/downloads/raymondproguy/typebook/total
-✅ Build https://github.com/raymondproguy/typebook/actions/workflows/test.yml/badge.svg
-
-🎯 Purpose
-
-This isn't just a demo — it's a real working app that shows how CrydenSync works in production. Perfect for:
-
-· Learning JWT authentication flow
-· Understanding session management
-· Seeing rate limiting in action
-· Building your own auth system
-
-📚 Learn More
-
-· CrydenSync Documentation
-· Fiber Documentation
-· Go SQLite
-
-🤝 Contributing
-
-PRs welcome! Feel free to add features or improvements.
-
-📄 License
-
-MIT © CrydenSync
-
----
-
-Built with ❤️ using CrydenSync
+MIT
