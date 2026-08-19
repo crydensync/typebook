@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { api } from "./api";
 import { useTheme } from "./useTheme";
+import LandingView from "./components/LandingView";
 import LoginForm from "./components/LoginForm";
 import SignupForm from "./components/SignupForm";
 import NotesView from "./components/NotesView";
@@ -10,7 +11,10 @@ import ConfirmEmailView from "./components/ConfirmEmailView";
 export default function App() {
   const { theme, toggle } = useTheme();
   const [authed, setAuthed] = useState(api.isAuthenticated());
-  const [authView, setAuthView] = useState("login"); // "login" | "signup"
+  // "landing" | "login" | "signup" — landing is the entry point for anyone
+  // not already authenticated, so first-time visitors see what the app is
+  // before being dropped straight into a login form.
+  const [authView, setAuthView] = useState("landing");
   const [page, setPage] = useState("notes"); // "notes" | "settings"
 
   // Simple query-param check for the email confirmation link —
@@ -21,7 +25,7 @@ export default function App() {
   function handleLoggedOut() {
     api.logoutLocal();
     setAuthed(false);
-    setAuthView("login");
+    setAuthView("landing");
     setPage("notes");
   }
 
@@ -38,10 +42,25 @@ export default function App() {
   }
 
   if (!authed) {
-    return authView === "login" ? (
-      <LoginForm onLoggedIn={() => setAuthed(true)} onSwitchToSignup={() => setAuthView("signup")} />
-    ) : (
-      <SignupForm onSignedUp={() => setAuthed(true)} onSwitchToLogin={() => setAuthView("login")} />
+    if (authView === "landing") {
+      return (
+        <LandingView
+          onGetStarted={() => setAuthView("signup")}
+          onLogin={() => setAuthView("login")}
+        />
+      );
+    }
+    return (
+      <div className="auth-screen-wrap">
+        <button className="btn btn-text auth-back" onClick={() => setAuthView("landing")}>
+          ← Back
+        </button>
+        {authView === "login" ? (
+          <LoginForm onLoggedIn={() => setAuthed(true)} onSwitchToSignup={() => setAuthView("signup")} />
+        ) : (
+          <SignupForm onSignedUp={() => setAuthed(true)} onSwitchToLogin={() => setAuthView("login")} />
+        )}
+      </div>
     );
   }
 

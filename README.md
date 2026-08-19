@@ -26,7 +26,7 @@ typebook/
 
 **1. Database** — run CrydenSync's migration, then this repo's own notes migration, against your Postgres instance:
 ```bash
-psql "$DATABASE_URL" -f path/to/cryden/store/postgres/migrations/0001_initial_schema.up.sql
+psql "$DATABASE_URL" -f store/postgres/migrations/0001_initial_schema.up.sql
 psql "$DATABASE_URL" -f backend/migrations/0001_notes.up.sql
 ```
 
@@ -49,7 +49,7 @@ Open the printed Vite URL (typically `http://localhost:5173`).
 
 ## Notes on this being a demo/reference app, not a template for your own production auth
 
-- The `consoleEmailSender` in `backend/email.go` just logs the verification link — it's a dev stand-in for `notify.EmailSender`. Replace it with a real provider (SES, SendGrid, Postmark) before using this pattern in a real product.
+- Email delivery uses [Resend](https://resend.com) (`backend/email.go`) when `RESEND_API_KEY` is set — falls back to logging the verification link to the console when it isn't, which is fine for local dev but means real users never receive it in a real deployment. `EMAIL_FROM` must be on a domain verified in your Resend account; until you verify one, Resend restricts sending to their test address and only to your own signup email.
 - Tokens are stored in `localStorage` on the frontend for simplicity. A production app handling more sensitive data might prefer httpOnly cookies instead — this is a reasonable, common tradeoff for a notes app, not a universal recommendation.
 - `Password validation` (`ValidateEmail`/`ValidatePassword`) is expected to be wired into the CrydenSync engine's `SignUp` call — confirm that's in place in your CrydenSync version before relying on this app's signup form to enforce a real password policy.
 

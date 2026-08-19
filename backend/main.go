@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	"log"
 	"net/http"
@@ -32,6 +33,10 @@ func main() {
 	if corsOrigin == "" {
 		corsOrigin = "http://localhost:5173" // Vite's default dev server port
 	}
+	frontendURL := os.Getenv("FRONTEND_URL")
+	if frontendURL == "" {
+		frontendURL = "http://localhost:5173"
+	}
 
 	db, err := sql.Open("postgres", dsn)
 	if err != nil {
@@ -42,13 +47,33 @@ func main() {
 		log.Fatalf("failed to ping DB: %v", err)
 	}
 
+	// Real email delivery requires RESEND_API_KEY (and ideally EMAIL_FROM,
+	// on a domain verified in your Resend account). Without it, fall back
+	// to logging the link to the console — fine for local dev, but this
+	// means confirmation links never actually reach real users, so this
+	// must be set in any real deployment.
+	var emailSender interface {
+		SendVerification(ctx context.Context, to string, rawToken string) error
+	}
+	if resendKey := os.Getenv("RESEND_API_KEY"); resendKey != "" {
+		fromAddress := os.Getenv("EMAIL_FROM")
+		if fromAddress == "" {
+			fromAddress = "onboarding@resend.dev" // Resend's test sender — only works until you verify your own domain
+		}
+		emailSender = &resendEmailSender{apiKey: resendKey, fromAddress: fromAddress, frontendURL: frontendURL}
+		log.Printf("email delivery: Resend (from %s)", fromAddress)
+	} else {
+		emailSender = &consoleEmailSender{frontendURL: frontendURL}
+		log.Printf("email delivery: console only (dev mode) — set RESEND_API_KEY for real delivery")
+	}
+
 	engine, err := cryden.New(cryden.Config{
 		JWTSecret:      jwtSecret,
 		Users:          postgres.NewUserStore(db),
 		Sessions:       postgres.NewSessionStore(db),
 		Audit:          postgres.NewAuditStore(db),
 		Verifications:  postgres.NewVerificationStore(db),
-		EmailSender:    &consoleEmailSender{}, // dev stand-in — see email.go
+		EmailSender:    emailSender,
 		AccessTokenTTL: 15 * time.Minute,
 	})
 	if err != nil {

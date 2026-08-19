@@ -256,6 +256,97 @@ button, input, textarea {
   padding: 0;
 }
 
+.auth-screen-wrap {
+  max-width: 360px;
+  margin: 40px auto 0;
+  padding: 0 20px;
+}
+
+.auth-back {
+  padding: 4px 0;
+  font-size: 13px;
+}
+
+.landing {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 60px 24px 80px;
+  text-align: center;
+}
+
+.landing-hero-img {
+  width: 96px;
+  height: auto;
+  margin-bottom: 16px;
+}
+
+.landing-hero h1 {
+  font-size: 32px;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  margin: 0 0 12px;
+}
+
+.landing-tagline {
+  color: var(--text-muted);
+  font-size: 16px;
+  line-height: 1.5;
+  max-width: 480px;
+  margin: 0 auto 28px;
+}
+
+.landing-cta {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 64px;
+}
+
+.landing-cta .btn {
+  padding: 11px 22px;
+  font-size: 15px;
+}
+
+.landing-features {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+  text-align: left;
+}
+
+.landing-feature h3 {
+  font-size: 15px;
+  font-weight: 500;
+  margin: 0 0 6px;
+}
+
+.landing-feature p {
+  color: var(--text-muted);
+  font-size: 13px;
+  line-height: 1.5;
+  margin: 0;
+}
+
+@media (max-width: 600px) {
+  .landing {
+    padding: 40px 20px 56px;
+  }
+  .landing-hero h1 {
+    font-size: 26px;
+  }
+  .landing-cta {
+    flex-direction: column;
+    align-items: stretch;
+    max-width: 280px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .landing-features {
+    grid-template-columns: 1fr;
+    gap: 28px;
+  }
+}
+
 .settings-section {
   background: var(--surface);
   border: 1px solid var(--border);
