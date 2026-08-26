@@ -7,8 +7,9 @@ export default function LandingView({ onGetStarted, onLogin }) {
         <img src={heroImage} alt="" className="landing-hero-img" />
         <h1>typebook</h1>
         <p className="landing-tagline">
-          Quick notes, done right. Fast to capture, easy to find, backed by real
-          account security — not an afterthought bolted on later.
+          A notebook that means it. Every note you write is backed by an
+          account you actually control — real sessions, real audit trail, no
+          black box.
         </p>
         <div className="landing-cta">
           <button className="btn btn-primary" onClick={onGetStarted}>

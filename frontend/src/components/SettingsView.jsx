@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { api } from "../api";
 
-export default function SettingsView({ onLoggedOut }) {
+export default function SettingsView({ onLoggedOut, oauthNotice }) {
   const [sessions, setSessions] = useState([]);
   const [sessionsError, setSessionsError] = useState("");
 
@@ -85,6 +85,26 @@ export default function SettingsView({ onLoggedOut }) {
 
   return (
     <div className="container">
+      {oauthNotice && (
+        <div className={oauthNotice.kind === "error" ? "error-msg" : "oauth-notice"}>{oauthNotice.text}</div>
+      )}
+
+      <div className="settings-section">
+        <h3>Connected accounts</h3>
+        <p className="desc">
+          Sign in with Google or GitHub too. Connecting doesn't affect your
+          password — you can still log in either way.
+        </p>
+        <div style={{ display: "flex", gap: "8px" }}>
+          <button className="btn btn-oauth" onClick={() => api.linkOAuthProvider("google")}>
+            Connect Google
+          </button>
+          <button className="btn btn-oauth" onClick={() => api.linkOAuthProvider("github")}>
+            Connect GitHub
+          </button>
+        </div>
+      </div>
+
       <div className="settings-section">
         <h3>Active sessions</h3>
         <p className="desc">Every device currently logged into your account.</p>

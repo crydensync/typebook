@@ -24,9 +24,10 @@ typebook/
 
 ## Running locally
 
-**1. Database** — run CrydenSync's migration, then this repo's own notes migration, against your Postgres instance:
+**1. Database** — run CrydenSync's migrations, then this repo's own notes migration, against your Postgres instance:
 ```bash
 psql "$DATABASE_URL" -f store/postgres/migrations/0001_initial_schema.up.sql
+psql "$DATABASE_URL" -f store/postgres/migrations/0002_oauth_identities.up.sql
 psql "$DATABASE_URL" -f backend/migrations/0001_notes.up.sql
 ```
 
@@ -46,6 +47,30 @@ npm run dev
 ```
 
 Open the printed Vite URL (typically `http://localhost:5173`).
+
+## Live deployment
+
+- **Frontend (Vercel):** https://typebook-pi.vercel.app
+- **Backend (Railway):** https://typebook-production.up.railway.app
+
+Deploying uses the exact same env vars as local dev — just with real values instead of `localhost`:
+
+```
+BASE_URL=https://typebook-production.up.railway.app
+FRONTEND_URL=https://typebook-pi.vercel.app
+CORS_ORIGINS=https://typebook-pi.vercel.app
+```
+
+If OAuth is enabled, each provider needs the production callback URLs registered ALONGSIDE the localhost ones (both are needed — local dev keeps working, prod also works):
+
+```
+https://typebook-production.up.railway.app/api/oauth/google/callback
+https://typebook-production.up.railway.app/api/oauth/google/link/callback
+https://typebook-production.up.railway.app/api/oauth/github/callback
+https://typebook-production.up.railway.app/api/oauth/github/link/callback
+```
+
+And `https://typebook-production.up.railway.app` added to Google's Authorized JavaScript origins.
 
 ## Notes on this being a demo/reference app, not a template for your own production auth
 

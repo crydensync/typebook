@@ -38,6 +38,23 @@ func main() {
 		frontendURL = "http://localhost:5173"
 	}
 
+	// OAuth is entirely optional — a deployment that never sets these
+	// still runs fine for password-based auth. Each provider is
+	// individually unavailable (redirects to the frontend with an
+	// error) if its own client ID/secret aren't both set.
+	baseURL := os.Getenv("BASE_URL")
+	if baseURL == "" {
+		baseURL = "http://localhost:" + port
+	}
+	oauthCfg := oauthConfig{
+		baseURL:            baseURL,
+		frontendURL:        frontendURL,
+		googleClientID:     os.Getenv("GOOGLE_CLIENT_ID"),
+		googleClientSecret: os.Getenv("GOOGLE_CLIENT_SECRET"),
+		githubClientID:     os.Getenv("GITHUB_CLIENT_ID"),
+		githubClientSecret: os.Getenv("GITHUB_CLIENT_SECRET"),
+	}
+
 	db, err := sql.Open("postgres", dsn)
 	if err != nil {
 		log.Fatalf("failed to open DB connection: %v", err)
@@ -75,15 +92,20 @@ func main() {
 		Verifications:  postgres.NewVerificationStore(db),
 		EmailSender:    emailSender,
 		AccessTokenTTL: 15 * time.Minute,
+		OAuth:          postgres.NewOAuthStore(db),
 	})
 	if err != nil {
 		log.Fatalf("failed to construct cryden engine: %v", err)
 	}
+	// Reused to sign the OAuth link-flow cookie — see oauth_handlers.go.
+	// Not a new secret to configure, just reusing an existing private value.
+	jwtSecretForSigning = jwtSecret
 
 	noteStore := NewNoteStore(db)
 
 	auth := &authHandlers{engine: engine}
 	notes := &noteHandlers{notes: noteStore}
+	oauth := &oauthHandlers{engine: engine, cfg: oauthCfg}
 
 	mux := http.NewServeMux()
 
@@ -92,6 +114,28 @@ func main() {
 	mux.HandleFunc("POST /api/login", auth.login)
 	mux.HandleFunc("POST /api/refresh", auth.refresh)
 	mux.HandleFunc("POST /api/email/confirm-change", auth.confirmEmailChange)
+
+	// OAuth — Start/Callback are public (this IS the login/signup
+	// path). Linking is a two-hop handoff: linkInit is a normal
+	// authenticated fetch() call that just sets a cookie; linkStart
+	// is a PLAIN navigation (no Authorization header possible) that
+	// reads that cookie and performs the actual provider redirect —
+	// see oauth_handlers.go for why this can't be one step.
+	mux.HandleFunc("GET /api/oauth/{provider}", func(w http.ResponseWriter, r *http.Request) {
+		oauth.start(w, r, r.PathValue("provider"))
+	})
+	mux.HandleFunc("GET /api/oauth/{provider}/callback", func(w http.ResponseWriter, r *http.Request) {
+		oauth.callback(w, r, r.PathValue("provider"))
+	})
+	mux.HandleFunc("POST /api/oauth/{provider}/link/init", requireAuth(engine, func(w http.ResponseWriter, r *http.Request) {
+		oauth.linkInit(w, r, r.PathValue("provider"))
+	}))
+	mux.HandleFunc("GET /api/oauth/{provider}/link", func(w http.ResponseWriter, r *http.Request) {
+		oauth.linkStart(w, r, r.PathValue("provider"))
+	})
+	mux.HandleFunc("GET /api/oauth/{provider}/link/callback", func(w http.ResponseWriter, r *http.Request) {
+		oauth.linkCallback(w, r, r.PathValue("provider"))
+	})
 
 	// Authenticated account-management endpoints
 	mux.HandleFunc("POST /api/logout", requireAuth(engine, auth.logout))
