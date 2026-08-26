@@ -24,6 +24,7 @@ async function request(path, { method = "GET", body, auth = false } = {}) {
   let res = await fetch(`${API_BASE}${path}`, {
     method,
     headers,
+    credentials: "include",
     body: body ? JSON.stringify(body) : undefined,
   });
 
@@ -36,6 +37,7 @@ async function request(path, { method = "GET", body, auth = false } = {}) {
       res = await fetch(`${API_BASE}${path}`, {
         method,
         headers,
+        credentials: "include",
         body: body ? JSON.stringify(body) : undefined,
       });
     }
@@ -74,6 +76,30 @@ async function tryRefresh() {
 }
 
 export const api = {
+  // Full browser navigation, not fetch — this has to actually move
+  // the address bar to the provider's real consent screen.
+  startOAuth: (provider) => {
+    window.location.href = `${API_BASE}/api/oauth/${provider}`;
+  },
+
+  // Two-hop linking flow for an ALREADY-AUTHENTICATED user: an
+  // authenticated fetch() confirms who's asking and sets a cookie,
+  // THEN a plain navigation (which can't carry the Authorization
+  // header) reads that cookie and does the real provider redirect.
+  // See backend/oauth_handlers.go for the full reasoning.
+  linkOAuthProvider: async (provider) => {
+    await request(`/api/oauth/${provider}/link/init`, { method: "POST", auth: true });
+    window.location.href = `${API_BASE}/api/oauth/${provider}/link`;
+  },
+
+  // Called by App.jsx after reading the OAuth callback's URL fragment
+  // — same storage shape api.login() already uses, so every other
+  // function here (request(), tryRefresh()) treats an OAuth session
+  // identically to a password one from this point on.
+  storeOAuthTokens: (accessToken, refreshToken) => {
+    storeTokens({ AccessToken: accessToken, RefreshToken: refreshToken });
+  },
+
   signUp: (email, password) =>
     request("/api/signup", { method: "POST", body: { email, password } }),
 

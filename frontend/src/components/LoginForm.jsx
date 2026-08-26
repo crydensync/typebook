@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { api } from "../api";
+import OAuthButtons from "./OAuthButtons";
 
 export default function LoginForm({ onLoggedIn, onSwitchToSignup }) {
   const [email, setEmail] = useState("");
@@ -27,6 +28,7 @@ export default function LoginForm({ onLoggedIn, onSwitchToSignup }) {
     <div className="auth-screen">
       <h2>Welcome back</h2>
       <p className="subtitle">Log in to typebook</p>
+      <OAuthButtons />
       <form onSubmit={handleSubmit}>
         <div className="field">
           <label>Email</label>
